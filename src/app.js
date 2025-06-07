@@ -1,13 +1,17 @@
 const express=require("express")
 
 const app=express()
+app.get("/user",(req,res)=>{
+    res.send({firstName:"Pooja",lastName:"Rajegowda"})
+})
 
-app.use("/",(req,res)=>{
-    res.send("haiii")
+app.post("/user",(req,res)=>{
+    res.send("Pushed the data successfully")
 })
-app.use("/hello",(req,res)=>{
-    res.send("pooja")
+app.delete("/user",(req,res)=>{
+    res.send("Deleted the info")
 })
+
 
 app.listen(3000,()=>{
     console.log("Server is successfully established")
