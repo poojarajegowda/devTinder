@@ -1,23 +1,20 @@
 const express=require("express")
-
+const {isAuth,userAuth}=require("./middlewares/auth.js")
 const app=express()
+app.use("/admin",isAuth)
+app.get("/user",userAuth,(req,res)=>{
+    res.send("User data received")
+})
+app.get("/admin/getAllData",(req,res,next)=>{
+    
+    res.send("data appearead successfully")
+    next();
+})
 
-app.use("/user",(req,res,next)=>{
-    console.log("1st one")
-    // res.send("first handler")
-next()
 
-},
-(req,res,next)=>{
-    console.log("2nd one")
-    // res.send("second handler")
-    next()
-},
-(req,res)=>{
-    res.send("third handler")
-}
-)
-
+app.get("/admin/deleteAllData",(req,res)=>{
+    res.send("deleted sucessfully")
+})
 app.listen(3000,()=>{
     console.log("Server is successfully established")
 })
