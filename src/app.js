@@ -1,20 +1,38 @@
 const express=require("express")
-const {isAuth,userAuth}=require("./middlewares/auth.js")
+const connectDB= require("./config/database")
 const app=express()
-app.use("/admin",isAuth)
-app.get("/user",userAuth,(req,res)=>{
-    res.send("User data received")
-})
-app.get("/admin/getAllData",(req,res,next)=>{
+
+const User=require("./models/user")
+
+app.post("/signup",async (req,res)=>{
+
+    const user= new User({
+        firstName:"Pooja",
+    lastName:"Rajegowda",
+    emailID:"pooja1710@gmail.com",
+    password:"pooja@1234"
     
-    res.send("data appearead successfully")
-    next();
+    })
+    try{
+        await user.save()
+        res.send("Data added successfully")
+    }catch(err){
+      res.status(400).send("Error saving the data: "+ err.message)
+    }
+   
 })
 
 
-app.get("/admin/deleteAllData",(req,res)=>{
-    res.send("deleted sucessfully")
-})
+connectDB()
+.then(()=>{
+    console.log("Database is connected successfully")
+
+
 app.listen(3000,()=>{
     console.log("Server is successfully established")
 })
+
+}).catch((err)=>{
+    console.error("Database is not connected")
+})
+
