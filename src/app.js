@@ -4,10 +4,68 @@ const connectDB= require("./config/database")
 const app=express()
 
 const User=require("./models/user")
+const {validateUser}=require("./utils/validation")
+const bcrypt=require("bcrypt")
 
 app.use(express.json());
-//get the data from the database based on emailID
 
+//signup api
+app.post("/signup",async (req,res)=>{
+    //validation
+    const {firstName,lastName,emailID,password}=req.body
+    try{
+    validateUser(req);
+    
+    //encrypt the password
+    const passwordHash=await bcrypt.hash(password,10)
+    console.log(passwordHash)
+    
+    //sign the user using post
+        const user= new User(
+            {firstName,
+            lastName,
+            emailID,
+            password:passwordHash
+        })
+      
+            await user.save()
+            res.send("Data added successfully")
+        }catch(err){
+          res.status(400).send("ERROR : "+ err.message)
+        }
+       
+    })
+
+    //login api
+    app.post("/login",async(req,res)=>{
+
+   
+        try{
+            const{emailID,password}=req.body
+//if emailid exists in DB
+const user=await User.findOne({emailID:emailID})
+console.log(user)
+if(!user){
+    throw new Error("EmailID does not exist in the DB")
+}
+
+//if password is correct
+ const validPassword=await bcrypt.compare(password,user.password)
+  if(!validPassword){
+    throw new Error("Passowrd is incorrect")
+  }else{
+    res.send("login successful")
+
+  }
+        }
+        catch(err)
+            {
+                res.status(400).send("ERROR : "+ err.message)
+              
+        }
+    })
+
+//get the data from the database based on emailID
 app.get("/user",async (req,res)=>{
   const userEmail=req.body.emailID
      try{
@@ -82,20 +140,8 @@ app.patch("/feed",async(req,res)=>{
 }
    
 })
-//put data into database
-app.post("/signup",async (req,res)=>{
-
-    const user= new User(req.body)
-    try{
 
 
-        await user.save()
-        res.send("Data added successfully")
-    }catch(err){
-      res.status(400).send("Error saving the data: "+ err.message)
-    }
-   
-})
 
 
 connectDB()
