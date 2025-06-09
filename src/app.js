@@ -1,4 +1,5 @@
 const express=require("express")
+
 const connectDB= require("./config/database")
 const app=express()
 
@@ -42,15 +43,29 @@ app.get("/feed",async(req,res)=>{
 
 //update data to the database
 
-app.patch("/user",async(req,res)=>{
+app.patch("/user/:_id",async(req,res)=>{
 
-    const userId=req.body._id;
+    const userId=req.params._id;
     const update=req.body
+
     try{
-        const user=await User.findByIdAndUpdate({_id:userId},update)
+       const allowedUpdated=["_id","gender","skills","password","about","age","photoURL"]
+
+       const isAllowed = Object.keys(update).every((k)=>allowedUpdated.includes(k))
+
+       if(!isAllowed){
+        throw new Error("Update is not allowed")
+       }
+       if (update.skills.length>10){
+        throw new Error("Skills  must be less than 10")
+       }
+      
+
+        const user=await User.findByIdAndUpdate({_id:userId},update,{runValidators:true})
+    
        res.send("User updated successfully")
     }catch(err){
-        res.status(400).send("User not found")
+        res.status(400).send("User cannot be updated : "+ err.message)
     }
    
 })
@@ -72,6 +87,8 @@ app.post("/signup",async (req,res)=>{
 
     const user= new User(req.body)
     try{
+
+
         await user.save()
         res.send("Data added successfully")
     }catch(err){
