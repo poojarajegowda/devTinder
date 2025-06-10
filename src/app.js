@@ -1,159 +1,101 @@
-const express=require("express")
-
-const connectDB= require("./config/database")
-const app=express()
-
-const User=require("./models/user")
-const {validateUser}=require("./utils/validation")
-const bcrypt=require("bcrypt")
+const express = require("express");
+const connectDB = require("./config/database");
+const app = express();
+const User = require("./models/user");
+const { validateUser } = require("./utils/validation");
+const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const { userAuth } = require("./middlewares/auth");
 
 app.use(express.json());
+app.use(cookieParser());
 
 //signup api
-app.post("/signup",async (req,res)=>{
-    //validation
-    const {firstName,lastName,emailID,password}=req.body
-    try{
+app.post("/signup", async (req, res) => {
+  //validation
+  const { firstName, lastName, emailID, password } = req.body;
+  try {
     validateUser(req);
-    
+
     //encrypt the password
-    const passwordHash=await bcrypt.hash(password,10)
-    console.log(passwordHash)
-    
+    const passwordHash = await bcrypt.hash(password, 10);
+    console.log(passwordHash);
+
     //sign the user using post
-        const user= new User(
-            {firstName,
-            lastName,
-            emailID,
-            password:passwordHash
-        })
-      
-            await user.save()
-            res.send("Data added successfully")
-        }catch(err){
-          res.status(400).send("ERROR : "+ err.message)
-        }
-       
-    })
+    const user = new User({
+      firstName,
+      lastName,
+      emailID,
+      password: passwordHash,
+    });
 
-    //login api
-    app.post("/login",async(req,res)=>{
-
-   
-        try{
-            const{emailID,password}=req.body
-//if emailid exists in DB
-const user=await User.findOne({emailID:emailID})
-console.log(user)
-if(!user){
-    throw new Error("EmailID does not exist in the DB")
-}
-
-//if password is correct
- const validPassword=await bcrypt.compare(password,user.password)
-  if(!validPassword){
-    throw new Error("Passowrd is incorrect")
-  }else{
-    res.send("login successful")
-
+    await user.save();
+    res.send("Data added successfully");
+  } catch (err) {
+    res.status(400).send("ERROR : " + err.message);
   }
-        }
-        catch(err)
-            {
-                res.status(400).send("ERROR : "+ err.message)
-              
-        }
-    })
+});
 
-//get the data from the database based on emailID
-app.get("/user",async (req,res)=>{
-  const userEmail=req.body.emailID
-     try{
-        const ID= await User.find({emailID:userEmail})
-        res.send(ID)
-     }
-     catch(err){
-        res.status(400).send("User not found")
-        }
-})
-//delete data from database
-app.delete("/user",async (req,res)=>{
-   const id= req.body._id
-    try{
-        await User.findByIdAndDelete({_id:id})
-        res.send("User deleted successfully")
+//login api
+app.post("/login", async (req, res) => {
+  try {
+    const { emailID, password } = req.body;
+    //if email id exists in DB
+    const user = await User.findOne({ emailID: emailID });
+
+    if (!user) {
+      throw new Error("EmailID does not exist in the DB");
     }
-    catch(err){
-        res.status(400).send("User not found")
-        }
-})
 
-// get all the data from the database
-app.get("/feed",async(req,res)=>{
-    try{
-        const users=await User.find({})
-        res.send(users)
+    //if password is correct
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      throw new Error("Passowrd is incorrect");
+    } else {
+      //create JWT token
+      const token = await jwt.sign({ _id: user._id }, "strongToken@1710",{expiresIn:"1d"});
+
+      // and wrap it inside a cookie send it back to the browser
+      const cookies = res.cookie("token", token,{expires:new Date(Date.now() + 24 * 3600000)});
+      //  console.log(cookies)
+
+      res.send("login successful");
     }
-   catch(err){
-    res.status(400).send("User not found")
-   }
-})
+  } catch (err) {
+    res.status(400).send("ERROR : " + err.message);
+  }
+});
 
-//update data to the database
+//get the profileapi
+app.get("/profile", userAuth, async (req, res) => {
+  try {
+    const user = req.user;
 
-app.patch("/user/:_id",async(req,res)=>{
-
-    const userId=req.params._id;
-    const update=req.body
-
-    try{
-       const allowedUpdated=["_id","gender","skills","password","about","age","photoURL"]
-
-       const isAllowed = Object.keys(update).every((k)=>allowedUpdated.includes(k))
-
-       if(!isAllowed){
-        throw new Error("Update is not allowed")
-       }
-       if (update.skills.length>10){
-        throw new Error("Skills  must be less than 10")
-       }
-      
-
-        const user=await User.findByIdAndUpdate({_id:userId},update,{runValidators:true})
-    
-       res.send("User updated successfully")
-    }catch(err){
-        res.status(400).send("User cannot be updated : "+ err.message)
+    if (!user) {
+      throw new Error("User is not found");
     }
-   
-})
+    res.send(user);
+  } catch (err) {
+    res.status(400).send("ERROR : " + err.message);
+  }
+});
 
-app.patch("/feed",async(req,res)=>{
+//sendConnectionRequest api
 
-    const Id=req.body.emailID
-    const update=req.body
-   try{
-    await User.findOneAndUpdate({emailID:Id},update)
-    res.send("Updated the data successfully")
-}catch(err){
-    res.status(400).send("User not found")
-}
-   
-})
-
-
-
+app.post("/sendConnectionRequest", userAuth, async (req, res) => {
+  const user = req.user;
+  res.send(user.firstName + "sent a connectionn request");
+});
 
 connectDB()
-.then(()=>{
-    console.log("Database is connected successfully")
+  .then(() => {
+    console.log("Database is connected successfully");
 
-
-app.listen(3000,()=>{
-    console.log("Server is successfully established")
-})
-
-}).catch((err)=>{
-    console.error("Database is not connected")
-})
-
+    app.listen(3000, () => {
+      console.log("Server is successfully established");
+    });
+  })
+  .catch((err) => {
+    console.error("Database is not connected");
+  });
