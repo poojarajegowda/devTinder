@@ -49,12 +49,12 @@ app.post("/login", async (req, res) => {
     }
 
     //if password is correct
-    const validPassword = await bcrypt.compare(password, user.password);
+    const validPassword = await user.validatePassword(password)
     if (!validPassword) {
-      throw new Error("Passowrd is incorrect");
+      throw new Error("Password is incorrect");
     } else {
       //create JWT token
-      const token = await jwt.sign({ _id: user._id }, "strongToken@1710",{expiresIn:"1d"});
+      const token = await user.getJWT();
 
       // and wrap it inside a cookie send it back to the browser
       const cookies = res.cookie("token", token,{expires:new Date(Date.now() + 24 * 3600000)});
