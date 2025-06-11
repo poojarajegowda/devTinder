@@ -33,7 +33,6 @@ authRouter.post("/signup", async (req, res) => {
 });
 
 
-
 //login api
 authRouter.post("/login", async (req, res) => {
     try {
@@ -64,7 +63,7 @@ authRouter.post("/login", async (req, res) => {
     }
   });
 
-
+//logout api
   authRouter.post("/logout",async(req,res)=>{
 
     res.cookie("token",null,{

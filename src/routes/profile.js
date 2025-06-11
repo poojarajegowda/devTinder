@@ -19,6 +19,7 @@ profileRouter.get("/profile/view", userAuth, async (req, res) => {
   }
 });
 
+//profile edit
 profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
   try {
     if (!validateEditProfile(req)) {
@@ -38,6 +39,8 @@ profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
   }
 });
 
+
+// profile edit password
 profileRouter.patch("/profile/editPassword", userAuth, async (req, res) => {
   try {
     const user = req.user; //current password
