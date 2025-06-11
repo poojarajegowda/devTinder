@@ -8,7 +8,7 @@
 
 
  # profileRouter
- -GET /profile
+ -GET /profile/view
  -PATCH /profile/edit
  -PATCH /profile/password
 

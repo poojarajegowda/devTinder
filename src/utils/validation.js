@@ -1,5 +1,6 @@
 const validator=require("validator")
 
+
 const validateUser=(req)=>{
  
 const {firstName,lastName,emailID,password}=req.body
@@ -15,8 +16,17 @@ else if(!validator.isStrongPassword(password)){
 }
 
 }
+  
+const validateEditProfile=(req)=>{
+      
+    const allowedEditOptions=["firstName","lastName","age","skills","gender","about","photoURL"]
+
+    const allowedFields=Object.keys(req.body).every((field)=>allowedEditOptions.includes(field))
+ return allowedFields;
+
+}
 
 
 module.exports={
-    validateUser
+    validateUser,validateEditProfile
 }
