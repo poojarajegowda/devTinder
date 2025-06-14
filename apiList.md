@@ -21,6 +21,7 @@
 
 
 # userRouter
- -GET/connections
+-GET/user/requests/received
+ -GET/user/connections/
  -GET/feed
 

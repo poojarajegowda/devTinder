@@ -63,4 +63,47 @@ requestRouter.post(
   }
 );
 
+
+//accept/reject connectionRequest api
+requestRouter.post("/request/review/:status/:requestID",userAuth,async(req,res)=>{
+try{
+  const loggedInUser=req.user
+  const{status,requestID}=req.params
+    
+const allowedStatus=["accept","reject"]
+
+if(!allowedStatus.includes(status)){
+  return res.status(400).json({
+    message:"Status is invalid"
+  })
+}
+
+const connectionRequest=await ConnectionRequestModel.findOne({
+  status:"interested",
+  _id:requestID,
+  toUserID:loggedInUser._id
+})
+
+if(!connectionRequest){
+  return res.status(400).json({
+    message:"cannot find the request"
+  })
+}
+
+//if the request is found
+connectionRequest.status=status
+
+const data=await connectionRequest.save();
+ 
+res.json({
+  message:"connection is "+ " "+ status,
+  data:data
+})
+}catch(err){
+  res.status(400).send(err.message)
+}
+
+
+})
+
 module.exports = requestRouter;
